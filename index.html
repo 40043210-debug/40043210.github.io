@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>兒童遊戲樂園</title>
+<script>
+// ===== 設定區：請修改下方的姓名、學號與學習心得 =====
+var USER_NAME = '梁甯暄';
+var USER_ID   = '81410354';
+var LEARNING_NOTE = '這學期我製作了三個網頁遊戲，分別是記憶翻牌、打地鼠和點點樂，真的超有成就感！一開始寫程式時覺得很難，但老師一步一步教我們，慢慢就發現其實沒有想像中恐怖。\n\n'
+  + '記憶翻牌是我最喜歡的遊戲，因為要記住卡片的位置，每次翻到一樣的圖案時都會很開心。為了讓卡片更可愛，我選了很多動物表情符號，玩起來心情很好。\n\n'
+  + '打地鼠的限時模式很刺激，30秒內要一直盯著畫面，手指點到快抽筋。我一邊測試一邊偷笑，想到自己以後可以做出這麼有趣的東西就覺得很神奇。\n\n'
+  + '點點樂最簡單但也最舒壓，一直點一直點，數字一直跳，不知不覺就破百了。我還設定了不同的獎勵訊息，點到100的時候會有「你是點擊之王」的訊息，看了很有成就感！\n\n'
+  + '這次的作業讓我發現寫網頁沒有那麼難，只要肯動手試，很多功能都可以自己做出來。謝謝老師的耐心教導，以後我想做出更多好玩的東西！';
+// ======================================================
+// 也可編輯同目錄下的 config.js 來設定
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 24px;
+    padding: 24px;
+    max-width: 700px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 28px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #e0e0e0;
+    color: #555;
+  }
+
+  .tab:hover { transform: translateY(-2px); }
+  .tab.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+  }
+
+  .game { display: none; }
+  .game.active { display: block; }
+
+  /* ========== 記憶翻牌 ========== */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 450px;
+    margin: 0 auto 16px;
+  }
+
+  .memory-card {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    user-select: none;
+    color: transparent;
+  }
+
+  .memory-card.flipped {
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    color: inherit;
+    transform: rotateY(360deg);
+  }
+
+  .memory-card.matched {
+    background: #a8e6cf;
+    box-shadow: 0 4px 15px rgba(168,230,207,0.5);
+    color: inherit;
+    cursor: default;
+    transform: scale(0.95);
+  }
+
+  /* ========== 打地鼠 ========== */
+  .mole-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 360px;
+    margin: 0 auto 16px;
+  }
+
+  .mole-hole {
+    aspect-ratio: 1;
+    background: #8B5E3C;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    cursor: pointer;
+    box-shadow: inset 0 -8px 0 #5a3d25;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mole-hole.has-mole {
+    background: #f5d6a8;
+    box-shadow: inset 0 -4px 0 #d4a574;
+    cursor: pointer;
+  }
+
+  .mole-hole:active { transform: scale(0.9); }
+
+  /* ========== 點擊計數 ========== */
+  .click-area {
+    max-width: 400px;
+    margin: 0 auto 16px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #a8edea, #fed6e3);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .click-area:active { transform: scale(0.95); }
+
+  .click-count {
+    font-size: 72px;
+    font-weight: 900;
+    color: #764ba2;
+    line-height: 1;
+  }
+
+  .click-label {
+    font-size: 20px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  /* ========== 通用 ========== */
+  .score-board {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #555;
+    flex-wrap: wrap;
+  }
+
+  .score-board span { background: #f0f0f0; padding: 6px 16px; border-radius: 50px; }
+
+  .btn {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(245,87,108,0.3);
+  }
+
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,87,108,0.4); }
+  .btn:active { transform: translateY(0); }
+
+  .message {
+    margin-top: 12px;
+    font-size: 20px;
+    font-weight: 700;
+    min-height: 32px;
+    color: #f5576c;
+  }
+
+  .emoji-big { font-size: 60px; line-height: 1; }
+  .emoji-small { font-size: 28px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎮 兒童遊戲樂園</h1>
+
+  <div class="tabs">
+    <button class="tab active" data-game="home">🏠 首頁</button>
+    <button class="tab" data-game="memory">🃏 記憶翻牌</button>
+    <button class="tab" data-game="mole">🔨 打地鼠</button>
+    <button class="tab" data-game="clicker">👆 點點樂</button>
+    <button class="tab" data-game="help">📖 遊戲說明</button>
+  </div>
+
+  <!-- ========== 首頁 ========== -->
+  <div class="game active" id="game-home">
+    <div class="emoji-big" style="margin-bottom:8px;">🎮</div>
+    <div style="font-size:22px;font-weight:700;color:#555;margin-bottom:4px;">歡迎來到</div>
+    <div style="font-size:28px;font-weight:900;background:linear-gradient(135deg,#f093fb,#f5576c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;">兒童遊戲樂園</div>
+    <div style="background:#f8f8ff;border-radius:16px;padding:20px;max-width:380px;margin:0 auto;">
+      <div style="font-size:18px;color:#555;margin-bottom:12px;">👤 玩家資料</div>
+      <div style="font-size:20px;font-weight:700;color:#444;margin-bottom:6px;" id="display-name"></div>
+      <div style="font-size:18px;color:#666;" id="display-id"></div>
+    </div>
+    <div style="margin-top:20px;color:#888;font-size:14px;">請選擇上方遊戲開始遊玩！</div>
+
+    <div style="margin-top:20px;text-align:left;max-width:380px;margin-left:auto;margin-right:auto;">
+      <div style="font-size:16px;font-weight:700;color:#555;margin-bottom:8px;">📝 學習心得</div>
+      <div id="learning-note" style="width:100%;min-height:200px;padding:12px;border:2px solid #e0e0e0;border-radius:12px;font-size:14px;font-family:'Microsoft JhengHei','微軟正黑體',sans-serif;line-height:1.8;color:#444;text-align:left;white-space:pre-wrap;"></div>
+    </div>
+  </div>
+
+  <!-- ========== 遊戲 1：記憶翻牌 ========== -->
+  <div class="game" id="game-memory">
+    <div class="score-board">
+      <span>🃏 配對：<span id="memory-pairs">0</span>/8</span>
+      <span>👆 翻牌：<span id="memory-moves">0</span></span>
+    </div>
+    <div class="memory-grid" id="memory-grid"></div>
+    <button class="btn" onclick="initMemory()">🔄 重新開始</button>
+    <div class="message" id="memory-msg"></div>
+  </div>
+
+  <!-- ========== 遊戲 2：打地鼠 ========== -->
+  <div class="game" id="game-mole">
+    <div class="score-board">
+      <span>⭐ 分數：<span id="mole-score">0</span></span>
+      <span>⏱ 時間：<span id="mole-time">30</span>s</span>
+    </div>
+    <div class="mole-grid" id="mole-grid"></div>
+    <button class="btn" onclick="initMole()">🔄 重新開始</button>
+    <div class="message" id="mole-msg"></div>
+  </div>
+
+  <!-- ========== 遊戲說明 ========== -->
+  <div class="game" id="game-help">
+    <div style="text-align:left;max-width:500px;margin:0 auto;padding:0 8px;">
+      <div style="background:#f8f8ff;border-radius:16px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:24px;font-weight:700;margin-bottom:8px;">🃏 記憶翻牌</div>
+        <ul style="list-style:none;padding:0;line-height:1.8;color:#444;font-size:15px;">
+          <li>📌 點擊卡片將它翻開，尋找相同圖案的配對</li>
+          <li>📌 一次只能翻兩張，配對成功會保持開啟</li>
+          <li>📌 配對全部 8 組即獲勝，越快越好！</li>
+        </ul>
+      </div>
+      <div style="background:#fff8f0;border-radius:16px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:24px;font-weight:700;margin-bottom:8px;">🔨 打地鼠</div>
+        <ul style="list-style:none;padding:0;line-height:1.8;color:#444;font-size:15px;">
+          <li>📌 地鼠會隨機從洞裡冒出，點擊牠得分</li>
+          <li>📌 限時 30 秒，時間到遊戲結束</li>
+          <li>📌 打錯洞沒有懲罰，放膽點擊吧！</li>
+        </ul>
+      </div>
+      <div style="background:#f0fff4;border-radius:16px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:24px;font-weight:700;margin-bottom:8px;">👆 點點樂</div>
+        <ul style="list-style:none;padding:0;line-height:1.8;color:#444;font-size:15px;">
+          <li>📌 盡情點擊中間的區域，數字會一直增加</li>
+          <li>📌 達到 10、25、50、100 次會有驚喜訊息</li>
+          <li>📌 沒有時間限制，挑戰最高分吧！</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 遊戲 3：點點樂 ========== -->
+  <div class="game" id="game-clicker">
+    <div class="score-board">
+      <span>👆 點擊：<span id="clicker-count">0</span></span>
+    </div>
+    <div class="click-area" id="click-area">
+      <div class="click-count" id="clicker-display">0</div>
+      <div class="click-label">點我！點我！</div>
+    </div>
+    <button class="btn" onclick="initClicker()">🔄 重新開始</button>
+    <div class="message" id="clicker-msg"></div>
+  </div>
+</div>
+
+<script>
+  // =============================================
+  // 音效引擎（Web Audio API，無需外部檔案）
+  // =============================================
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type, volume) {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume || 0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch(e) { /* 靜默失敗 */ }
+  }
+
+  function playFlip()    { playTone(600, 0.1, 'sine'); }
+  function playMatch()   { playTone(880, 0.3, 'sine', 0.2); setTimeout(() => playTone(1100, 0.3, 'sine', 0.2), 150); }
+  function playWin()     { [0,150,300,450].forEach((d,i) => setTimeout(() => playTone(523+262*i, 0.3, 'sine', 0.15), d)); }
+  function playWhack()   { playTone(200, 0.15, 'square', 0.12); }
+  function playClick()   { playTone(800, 0.06, 'sine', 0.1); }
+  function playMilestone(){ playTone(660, 0.15, 'sine', 0.15); setTimeout(() => playTone(990, 0.25, 'sine', 0.15), 120); }
+  function playGameOver(){ playTone(440, 0.4, 'sawtooth', 0.1); setTimeout(() => playTone(330, 0.5, 'sawtooth', 0.1), 300); }
+  function playMoleAppear(){ playTone(1200, 0.08, 'sine', 0.06); }
+
+  // =============================================
+  // 切換頁籤
+  // =============================================
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.game').forEach(g => g.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('game-' + tab.dataset.game).classList.add('active');
+    });
+  });
+
+  // =============================================
+  // 遊戲 1：記憶翻牌
+  // =============================================
+  const EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼'];
+  let memoryCards = [], memoryFlipped = [], memoryLocked = false;
+  let memoryPairs = 0, memoryMoves = 0;
+
+  function initMemory() {
+    memoryPairs = 0; memoryMoves = 0; memoryLocked = false; memoryFlipped = [];
+    document.getElementById('memory-pairs').textContent = '0';
+    document.getElementById('memory-moves').textContent = '0';
+    document.getElementById('memory-msg').textContent = '';
+
+    let emojis = [...EMOJIS, ...EMOJIS];
+    for (let i = emojis.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [emojis[i], emojis[j]] = [emojis[j], emojis[i]];
+    }
+    memoryCards = emojis;
+
+    const grid = document.getElementById('memory-grid');
+    grid.innerHTML = '';
+    emojis.forEach((emoji, i) => {
+      const card = document.createElement('div');
+      card.className = 'memory-card';
+      card.textContent = emoji;
+      card.dataset.index = i;
+      card.addEventListener('click', () => flipCard(i));
+      grid.appendChild(card);
+    });
+  }
+
+  function flipCard(index) {
+    if (memoryLocked) return;
+    const cards = document.querySelectorAll('.memory-card');
+    const card = cards[index];
+    if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+    if (memoryFlipped.length >= 2) return;
+
+    card.classList.add('flipped');
+    memoryFlipped.push(index);
+    memoryMoves++;
+    playFlip();
+    document.getElementById('memory-moves').textContent = memoryMoves;
+
+    if (memoryFlipped.length === 2) {
+      memoryLocked = true;
+      const [i1, i2] = memoryFlipped;
+      if (memoryCards[i1] === memoryCards[i2]) {
+        cards[i1].classList.add('matched');
+        cards[i2].classList.add('matched');
+        memoryPairs++;
+        document.getElementById('memory-pairs').textContent = memoryPairs;
+        memoryFlipped = [];
+        memoryLocked = false;
+        playMatch();
+        if (memoryPairs === 8) {
+          document.getElementById('memory-msg').textContent = '🎉 你贏了！太棒啦！';
+          setTimeout(playWin, 400);
+        }
+      } else {
+        setTimeout(() => {
+          cards[i1].classList.remove('flipped');
+          cards[i2].classList.remove('flipped');
+          memoryFlipped = [];
+          memoryLocked = false;
+        }, 700);
+      }
+    }
+  }
+
+  // =============================================
+  // 遊戲 2：打地鼠
+  // =============================================
+  let moleScore = 0, moleTime = 30, moleTimer = null, moleSpawn = null;
+  let moleActive = false;
+
+  function initMole() {
+    moleScore = 0; moleTime = 30; moleActive = false;
+    if (moleTimer) clearInterval(moleTimer);
+    if (moleSpawn) clearInterval(moleSpawn);
+    document.getElementById('mole-score').textContent = '0';
+    document.getElementById('mole-time').textContent = '30';
+    document.getElementById('mole-msg').textContent = '';
+
+    const grid = document.getElementById('mole-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+      const hole = document.createElement('div');
+      hole.className = 'mole-hole';
+      hole.dataset.index = i;
+      hole.addEventListener('click', () => whack(i));
+      grid.appendChild(hole);
+    }
+
+    moleActive = true;
+    moleSpawn = setInterval(spawnMole, 800);
+    moleTimer = setInterval(() => {
+      moleTime--;
+      document.getElementById('mole-time').textContent = moleTime;
+      if (moleTime <= 0) {
+        clearInterval(moleTimer);
+        clearInterval(moleSpawn);
+        moleActive = false;
+        document.querySelectorAll('.mole-hole').forEach(h => {
+          h.classList.remove('has-mole');
+          h.textContent = '';
+        });
+        document.getElementById('mole-msg').textContent = '⏰ 時間到！得分：' + moleScore;
+        playGameOver();
+      }
+    }, 1000);
+    spawnMole();
+  }
+
+  function spawnMole() {
+    if (!moleActive) return;
+    document.querySelectorAll('.mole-hole').forEach(h => {
+      h.classList.remove('has-mole');
+      h.textContent = '';
+    });
+    const idx = Math.floor(Math.random() * 9);
+    const hole = document.querySelectorAll('.mole-hole')[idx];
+    hole.classList.add('has-mole');
+    hole.textContent = '🐭';
+    playMoleAppear();
+  }
+
+  function whack(index) {
+    if (!moleActive) return;
+    const hole = document.querySelectorAll('.mole-hole')[index];
+    if (!hole.classList.contains('has-mole')) return;
+    hole.classList.remove('has-mole');
+    hole.textContent = '';
+    moleScore++;
+    playWhack();
+    document.getElementById('mole-score').textContent = moleScore;
+    hole.textContent = '💥';
+    setTimeout(() => { hole.textContent = ''; }, 200);
+  }
+
+  // =============================================
+  // 遊戲 3：點點樂
+  // =============================================
+  let clickerCount = 0;
+  const CLICK_TARGETS = [10, 25, 50, 100];
+  const CLICK_MSGS = [
+    '繼續加油！ 💪', '不錯喔！ 🌟', '好厲害！ 🔥', '你是點擊之王！ 👑'
+  ];
+
+  function initClicker() {
+    clickerCount = 0;
+    document.getElementById('clicker-count').textContent = '0';
+    document.getElementById('clicker-display').textContent = '0';
+    document.getElementById('clicker-msg').textContent = '開始點我吧！';
+  }
+
+  document.getElementById('click-area').addEventListener('click', () => {
+    clickerCount++;
+    document.getElementById('clicker-count').textContent = clickerCount;
+    document.getElementById('clicker-display').textContent = clickerCount;
+
+    playClick();
+
+    for (let i = CLICK_TARGETS.length - 1; i >= 0; i--) {
+      if (clickerCount === CLICK_TARGETS[i]) {
+        document.getElementById('clicker-msg').textContent = '🎉 ' + CLICK_MSGS[i];
+        playMilestone();
+        return;
+      }
+    }
+    if (clickerCount > 100) {
+      document.getElementById('clicker-msg').textContent = '🏆 無人能擋！';
+      playMilestone();
+    }
+  });
+
+  // =============================================
+  // 初始化所有遊戲
+  // =============================================
+  // 顯示首頁姓名學號
+  document.getElementById('display-name').textContent = '姓名：' + USER_NAME;
+  document.getElementById('display-id').textContent = '學號：' + USER_ID;
+  document.getElementById('learning-note').textContent = LEARNING_NOTE;
+
+  initMemory();
+  initMole();
+  initClicker();
+</script>
+</body>
+</html>
